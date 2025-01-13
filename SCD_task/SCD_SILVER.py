@@ -6,6 +6,8 @@
 # DBTITLE 1,Reading the data
 df_json = spark.read.format("json").option("multiline", "true").schema(schema).load("dbfs:/FileStore/shared_uploads/revathy.s@diggibyte.com/data_2-1.json")
 
+display(df_json)
+
 # COMMAND ----------
 
 # DBTITLE 1,semi flattening the data

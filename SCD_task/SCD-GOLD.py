@@ -57,9 +57,6 @@ if not DeltaTable.isDeltaTable(spark, output_path):
                   .mode("overwrite")\
                   .option("path", output_path)\
                   .saveAsTable(f"gold.gold_data")
-
-
-# Merge to implement SCD Type 2
 else:
     old_delta_table = DeltaTable.forPath(spark, output_path)
     old_delta_table.alias("target").merge(
@@ -73,3 +70,56 @@ else:
     }
 ).whenNotMatchedInsertAll()\
 .execute()
+
+# COMMAND ----------
+
+# Defining current timestamp
+current_time = current_timestamp()
+output_path = "/dbfs/shared_uploads/revathy.s@diggibyte.com/scd/gold"
+
+if not DeltaTable.isDeltaTable(spark, output_path):
+    final_df.write.format("delta") \
+          .mode("overwrite") \
+          .option("path", output_path) \
+          .saveAsTable(f"gold.gold_data")
+else:
+    old_delta_table = DeltaTable.forPath(spark, output_path)
+    old_delta_table.alias("target").merge(
+        final_df.alias("source"),
+        "target.answer_id = source.answer_id AND target.is_current = true"
+    ).whenMatchedUpdate(
+        set={
+            "last_updated": current_time  
+        }
+    ).whenNotMatchedInsertAll() \
+     .whenNotMatchedBySourceUpdate(
+         set={
+             "is_current": lit(False),
+             "last_updated": current_time
+         }
+     ).execute()
+
+
+# COMMAND ----------
+
+# Defining current timestamp
+current_time = current_timestamp()
+output_path = "/dbfs/shared_uploads/revathy.s@diggibyte.com/scd/gold"
+
+if not DeltaTable.isDeltaTable(spark, output_path):
+    final_df.write.format("delta") \
+          .mode("overwrite") \
+          .option("path", output_path) \
+          .saveAsTable(f"gold.gold_data")
+else:
+    old_delta_table = DeltaTable.forPath(spark, output_path)
+    old_delta_table.alias("target").merge(
+        final_df.alias("source"),
+        "target.answer_id = source.answer_id AND target.is_current = true"
+    ).whenMatchedUpdate(
+        set={
+            "last_updated": current_time  
+        }
+    ).whenNotMatchedInsertAll() \
+    .whenNotMatchedBySourceDelete()\
+    .execute()
